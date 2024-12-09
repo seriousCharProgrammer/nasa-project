@@ -1,29 +1,36 @@
-name: NASA Project CI
+name: NASA Mission Control Project CI/CD
+
 on:
   push:
-    branches: [ master ]
+    branches: [main, develop]
   pull_request:
-    branches: [ master ]
+    branches: [main, develop]
+
 jobs:
-  build:
-    env:
-      CI: true
-      MONGO_URL: mongodb://localhost/nasa
+  build-and-test:
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
-        mongodb-version: ['7.0']
-    runs-on: ubuntu-latest
+        node-version: [16.x, 18.x, 20.x]
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js version ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Use MongoDB from GitHub actions
-        uses: supercharge/mongodb-github-action@1.11.0
-        with:
-          mongodb-version: ${{ matrix.mongodb-version }}
-      - run: npm install
-      - run: npm run build --prefix client
-      - run: npm test
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm run install
+
+      - name: Run Client Tests
+        run: npm run test --prefix client
+
+      - name: Run Server Tests
+        run: npm run test --prefix server
+
+      - name: Build Client
+        run: npm run build --prefix client
